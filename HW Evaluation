@@ -1,0 +1,220 @@
+# **Neuroevolution Course**
+
+<br>
+
+- **Group Project 2022/2023**
+- **Academic Year: 2020-2023 | 2nd Semester**
+- **Professor TP: Leonardo Vanneschi**
+- **Professor P: Nuno Rodrigues**
+
+
+<br>
+
+> **Group composed by:**<p>
+> Carolina Bezerra, nº 20220392 <p>
+> Engjulla Hasani, nº 20221404 <p>
+> Mohamed Taher Ben Slama, nº 20221039 <p>
+> Simone Lewenhaupt, nº 20211452 <p>
+> Skander Chaabini, 20221041 <p>
+
+## 📖 Project Overview
+
+This project focuses on addressing __bloat__ in genetic programming through the implementation of the Double Tournament selection method. Bloat refers to the excessive 
+growth of size without a corresponding improvement in fitness during the evolutionary process. 
+
+The proposed solution, the Double Tournament algorithm, __introduces a size evaluation alongside the traditional fitness evaluation during the selection process__. 
+The algorithm consists of __two rounds of tournaments: qualifier tournaments and a final tournament__. In the qualifier tournaments, individuals compete based on 
+their fitness using regular tournament selection. The winners from these tournaments proceed to the final tournament.
+
+The size of the final tournament is determined by the parsimony tournament size parameter, Sp. A subset of individuals from the winners of the qualifier tournaments 
+is randomly selected based on Sp. These selected individuals are then evaluated based on their size, and the one with the smallest size is chosen as the final parent 
+for reproduction. The algorithm includes two additional parameters: Sf, the fitness tournament size, and a switch parameter that determines the evaluation order.
+
+In this project, the Double Tournament selection method will be implemented within the provided StdGP framework. A new function called "double_tournament" will be 
+created in the GeneticOperators.py file. The StdGP.py file will be modified to use the Double Tournament selection instead of the regular Tournament selection.
+
+<br>
+
+## 📖 Introduction
+
+Tournament selection is a selection mechanism used in genetic algorithms to choose individuals for reproduction. It involves organizing competitions among a subset of 
+individuals, with the winner selected based on fitness. The tournament size determines the number of competitors in each tournament.
+
+The main objective of tournament selection is to create selection pressure, favoring individuals with higher fitness for reproduction, **which leads to faster 
+convergence and improved population fitness**. Winners of each tournament are selected for the mating pool, resulting in a pool with higher average fitness. The 
+**selection pressure can be adjusted by varying the tournament size**. Larger tournament sizes increase selection pressure, as individuals with higher fitness have 
+a higher chance of winning. 
+
+<ber>
+
+**Source:**
+ - Miller, B., &amp; Goldberg, D. E. (1995). Genetic algorithms, tournament selection and the effects of noise. 
+
+ <br>
+ 
+ # Clone the repository
+!git clone https://github.com/jespb/Python-StdGP.git
+
+# Add the repository path to the system path
+import sys
+sys.path.append('/content/Python-StdGP')
+
+# Imports
+import time
+import random
+import requests
+import numpy as np
+import pandas as pd
+from math import log
+from random import Random
+import multiprocessing as mp
+from stdgp.StdGP import StdGP
+from stdgp.Node import Node
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, f1_score, cohen_kappa_score, mean_squared_error
+
+import warnings
+warnings.filterwarnings("ignore")
+
+# Import the modules from the repository
+from stdgp import SimpleThresholdClassifier
+from stdgp import Node
+from stdgp import Individual
+from stdgp.Individual import Individual
+
+
+## 📖 Double Tournament
+
+In this function, we have a population of individuals, where each individual has a fitness value and a size. The goal is to select a single individual from this 
+population through a function called double_tournament. It consists of two stages: fitness tournaments and size tournaments. 
+
+<br>
+
+__Process:__
+
+1. Fitness Tournaments (Sf):
+   - The function starts by initializing an empty list called `qualifiers` to store the winners of fitness tournaments.
+   - It then performs Sf number of fitness tournaments using a loop. In each tournament:
+     - Two individuals are randomly selected from the population using the `random.sample()` function. These two individuals compete against each other.
+     - The individual with the higher fitness value is considered the winner.
+     - The winner of each tournament is added to the `qualifiers` list.
+   - After completing all the fitness tournaments, we have a list of winners stored in `qualifiers`.
+
+2. Size Tournaments (Sp):
+   - The function proceeds to perform Sp number of size tournaments.
+   - From the list of winners (qualifiers) obtained from fitness tournaments, a subset of individuals is randomly selected using the `random.sample()` function.
+   - These selected individuals compete against each other based on their program sizes.
+   - The winner of each size tournament is not determined yet.
+
+Selection Order:
+The `switch` parameter determines the order of selection between fitness and size tournaments in the double tournament. When `switch` is set to `False` (the default 
+value), the selection order is based on fitness first and then size. If `switch` is set to `True`, the selection order is reversed.
+
+Final Selection:
+Once the size tournaments are completed, we have a set of finalists remaining. The final selection depends on the selection order determined by the `switch` 
+parameter:
+- If `switch` is `False`, the individual with the maximum program size among the finalists is chosen as the parent.
+- If `switch` is `True`, the individual with the minimum program size among the finalists is chosen as the parent.
+
+The chosen parent individual is then returned by the function as the output.
+
+To summarize, the function conducts fitness tournaments to select winners based on fitness, followed by size tournaments to further narrow down the selection based 
+on program size. The final selected individual depends on the order of selection specified by the `switch` parameter.
+
+
+
+### Test the double_tournament function:
+# Define the population as a list of dictionaries
+# Each dictionary represents an individual in the population
+population = [
+    {'expression': '( X6 / X0 ) / ( X2 + X3 ) ) ) * X2 )', 'fitness': 10},
+    {'expression': '( X6 / X0 )', 'fitness': 5},
+    {'expression': '( X6 / X0 )*( X6 / X2 )*( X4 / X0 ) - X1', 'fitness': 8},
+    {'expression': '(X4 / X0 ) - X1 + X6', 'fitness': 12},
+    {'expression': '(X3- X2)/(X4*X7 +X5)', 'fitness': 15},
+    {'expression': '(X3- X2)/(X4*X7 +X5) +(X3- X2)/(X4*X7 +X5)', 'fitness': 6},
+    {'expression': 'X3+X2', 'fitness': 9},
+    {'expression': 'X7*X4*X2', 'fitness': 7}
+]
+
+# Set up the parameters for a double tournament selection process
+rng = random.Random()  # Create an instance of random.Random()
+Sf = 6  # Set the number of individuals for the first stage of the tournament
+Sp = 5  # Set the number of individuals for the second stage of the tournament
+switch = False  # Set the switch value to default
+
+# Call the double_tournament function
+winner = double_tournament(rng, population, Sf, Sp, switch)
+print("Winner from the double tournament:", winner)
+
+
+
+### Test the double_tournamnet function with a population generator
+<br>
+
+Here we tested different parameters of the double tournament and it shows the individual that emerged as the winner.
+- In the test case 1, the population consists of 20 individuals with different fitness values. The double tournament is conducted with Sf=3 and Sp=2.
+
+- In the test case 2, the population consists of 50 individuals with different fitness values. The double tournament is performed with Sf=5 and Sp=4. 
+
+- In the test case 3, the population consists of 100 individuals with different fitness values. The double tournament is executed with Sf=6 and Sp=3.
+
+def generate_population(size):
+    # Initialize an empty list to store the population
+    population = []
+    
+    # Generate individuals for the population
+    for i in range(size):
+        # Create an individual with a unique identifier (i + 1) and a random fitness value
+        individual = f'Individual {i + 1} with fitness {random.randint(1, 100)}'
+        
+        # Add the individual to the population list
+        population.append(individual)
+    
+    # Return the generated population
+    return population
+
+
+# Using double_tournament with different population sizes and selection settings
+# Test case 1
+population_size = 20
+population = generate_population(population_size)
+print("Test case 1:\nPopulation:", population)
+winner = double_tournament(rng, population, Sf=3, Sp=2, switch=False)
+print("Winner from the double tournament:", winner, "\n")
+
+# Test case 2
+population_size = 50
+population = generate_population(population_size)
+print("Test case 2:\nPopulation:", population)
+winner = double_tournament(rng, population, Sf=5, Sp=4, switch=True)
+print("Winner from the double tournament:", winner, "\n")
+
+# Test case 3
+population_size = 100
+population = generate_population(population_size)
+print("Test case 3:\nPopulation:", population)
+winner = double_tournament(rng, population, Sf=6, Sp=3, switch=True)
+print("Winner from the double tournament:", winner, "\n")
+
+
+
+### Test updated stdGP module
+# Load dataset from the same github repository
+data = pd.read_csv('/content/Python-StdGP/datasets/heart.csv')
+
+# Split the dataset into features and label
+X = data.drop("Y", axis=1)
+y = data["Y"]
+
+# Split the data into training and testing sets
+Tr_X, Te_X, Tr_y, Te_y = train_test_split(X, y, train_size=0.7, random_state = 42, stratify = y)
+
+# Define the model
+model = StdGP(operators=[("+",2),("-",2),("*",2),("/",2)], population_size=100, max_generation=30, verbose=True, model_name='SimpleThresholdClassifier', fitnessType='Accuracy')
+
+# Fit the classifier
+model.fit(Tr_X, Tr_y, Te_x = Te_X, Te_y = Te_y)
+
+# Show the expression
+print(model)

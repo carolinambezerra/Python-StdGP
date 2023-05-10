@@ -53,7 +53,7 @@ a higher chance of winning.
  <br>
  
  # Clone the repository
-!git clone https://github.com/jespb/Python-StdGP.git
+!git clone https://github.com/carolinambezerra/Python_StdGP.git
 
 # Add the repository path to the system path
 import sys
